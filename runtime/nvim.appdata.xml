@@ -7,7 +7,7 @@
     https://github.com/flathub/io.neovim.nvim
 -->
 <component type="desktop-application">
-  <id>nvim</id>
+  <id>org.neovim.nvim</id>
   <translation type="gettext">nvim</translation>
   <project_license>Apache-2.0</project_license>
   <metadata_license>CC0-1.0</metadata_license>
@@ -45,7 +45,9 @@
     <release date="2018-07-11" version="0.3.0"/>
   </releases>
 
-  <content_rating type="oars-1.1"/>
+  <content_rating type="oars-1.1">
+	<content_attribute id="language-humor">mild</content_attribute>
+  </content_rating>
   <launchable type="desktop-id">nvim.desktop</launchable>
   <url type="homepage">https://neovim.io/</url>
   <url type="bugtracker">https://github.com/neovim/neovim/issues</url>

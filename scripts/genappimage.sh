@@ -51,7 +51,7 @@ chmod +x "$APP_BUILD_DIR"/linuxdeploy-x86_64.AppImage
 
 # metainfo is not packaged automatically by linuxdeploy
 mkdir "$APP_DIR/usr/share/metainfo/"
-cp "$ROOT_DIR/runtime/nvim.appdata.xml" "$APP_DIR/usr/share/metainfo/"
+cp "$ROOT_DIR/runtime/nvim.appdata.xml" "$APP_DIR/usr/share/metainfo/org.neovim.nvim.appdata.xml"
 
 cd "$APP_DIR"
 
