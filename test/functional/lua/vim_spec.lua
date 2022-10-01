@@ -905,7 +905,7 @@ describe('lua stdlib', function()
     ]]))
 
     -- vim.empty_dict() gives new value each time
-    -- equality is not overriden (still by ref)
+    -- equality is not overridden (still by ref)
     -- non-empty table uses the usual heuristics (ignores the tag)
     eq({false, {"foo"}, {namey="bar"}}, exec_lua([[
       local aa = vim.empty_dict()
@@ -1390,11 +1390,23 @@ describe('lua stdlib', function()
   end)
 
   it('vim.env', function()
-    exec_lua [[
-    vim.fn.setenv("A", 123)
-    ]]
-    eq('123', funcs.luaeval "vim.env.A")
-    eq(true, funcs.luaeval "vim.env.B == nil")
+    exec_lua([[vim.fn.setenv('A', 123)]])
+    eq('123', funcs.luaeval('vim.env.A'))
+    exec_lua([[vim.env.A = 456]])
+    eq('456', funcs.luaeval('vim.env.A'))
+    exec_lua([[vim.env.A = nil]])
+    eq(NIL, funcs.luaeval('vim.env.A'))
+
+    eq(true, funcs.luaeval('vim.env.B == nil'))
+
+    command([[let $HOME = 'foo']])
+    eq('foo', funcs.expand('~'))
+    eq('foo', funcs.luaeval('vim.env.HOME'))
+    exec_lua([[vim.env.HOME = nil]])
+    eq('foo', funcs.expand('~'))
+    exec_lua([[vim.env.HOME = 'bar']])
+    eq('bar', funcs.expand('~'))
+    eq('bar', funcs.luaeval('vim.env.HOME'))
   end)
 
   it('vim.v', function()
@@ -1421,7 +1433,7 @@ describe('lua stdlib', function()
     ]]
     eq('', funcs.luaeval "vim.bo.filetype")
     eq(true, funcs.luaeval "vim.bo[BUF].modifiable")
-    matches("unknown option 'nosuchopt'$",
+    matches("no such option: 'nosuchopt'$",
        pcall_err(exec_lua, 'return vim.bo.nosuchopt'))
     matches("Expected lua string$",
        pcall_err(exec_lua, 'return vim.bo[0][0].autoread'))
@@ -1442,7 +1454,7 @@ describe('lua stdlib', function()
     eq(0, funcs.luaeval "vim.wo.cole")
     eq(0, funcs.luaeval "vim.wo[0].cole")
     eq(0, funcs.luaeval "vim.wo[1001].cole")
-    matches("unknown option 'notanopt'$",
+    matches("no such option: 'notanopt'$",
        pcall_err(exec_lua, 'return vim.wo.notanopt'))
     matches("Expected lua string$",
        pcall_err(exec_lua, 'return vim.wo[0][0].list'))

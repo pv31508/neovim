@@ -7,6 +7,7 @@
 #include <string.h>
 #include <uv.h>
 
+#include "klib/kvec.h"
 #include "nvim/ascii.h"
 #include "nvim/charset.h"
 #include "nvim/eval.h"
@@ -15,7 +16,6 @@
 #include "nvim/event/rstream.h"
 #include "nvim/ex_cmds.h"
 #include "nvim/fileio.h"
-#include "nvim/lib/kvec.h"
 #include "nvim/log.h"
 #include "nvim/main.h"
 #include "nvim/memline.h"
@@ -805,7 +805,7 @@ done:
 ///   char *output = NULL;
 ///   size_t nread = 0;
 ///   char *argv[] = {"ls", "-la", NULL};
-///   int exitcode = os_sytem(argv, NULL, 0, &output, &nread);
+///   int exitcode = os_system(argv, NULL, 0, &output, &nread);
 ///
 /// @param argv The commandline arguments to be passed to the shell. `argv`
 ///             will be consumed.

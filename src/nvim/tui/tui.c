@@ -13,13 +13,13 @@
 # include <termios.h>
 #endif
 
+#include "klib/kvec.h"
 #include "nvim/api/private/helpers.h"
 #include "nvim/api/vim.h"
 #include "nvim/ascii.h"
 #include "nvim/event/loop.h"
 #include "nvim/event/signal.h"
 #include "nvim/highlight.h"
-#include "nvim/lib/kvec.h"
 #include "nvim/log.h"
 #include "nvim/main.h"
 #include "nvim/map.h"
@@ -485,9 +485,7 @@ static void tui_main(UIBridgeData *bridge, UI *ui)
   // TODO(bfredl): zero hl is empty, send this explicitly?
   kv_push(data->attrs, HLATTRS_INIT);
 
-#if TERMKEY_VERSION_MAJOR > 0 || TERMKEY_VERSION_MINOR > 18
   data->input.tk_ti_hook_fn = tui_tk_ti_getstr;
-#endif
   tinput_init(&data->input, &tui_loop);
   tui_terminal_start(ui);
 
@@ -1616,7 +1614,7 @@ static void unibi_goto(UI *ui, int row, int col)
       memset(&vars, 0, sizeof(vars)); \
       data->cork = true; \
 retry: \
-      unibi_format(vars, vars + 26, str, data->params, out, ui, NULL, NULL); \
+      unibi_format(vars, vars + 26, str, data->params, out, ui, pad, ui); \
       if (data->overflow) { \
         data->bufpos = orig_pos; \
         flush_buf(ui); \
@@ -1647,6 +1645,7 @@ static void out(void *ctx, const char *str, size_t len)
 
   if (len > available) {
     if (data->cork) {
+      // Called by unibi_format(): avoid flush_buf() halfway an escape sequence.
       data->overflow = true;
       return;
     } else {
@@ -1656,6 +1655,30 @@ static void out(void *ctx, const char *str, size_t len)
 
   memcpy(data->buf + data->bufpos, str, len);
   data->bufpos += len;
+}
+
+/// Called by unibi_format() for padding instructions.
+/// The following parameter descriptions are extracted from unibi_format(3) and terminfo(5).
+///
+/// @param ctx    the same as `ctx2` passed to unibi_format()
+/// @param delay  the delay in tenths of milliseconds
+/// @param scale  padding is proportional to the number of lines affected
+/// @param force  padding is mandatory
+static void pad(void *ctx, size_t delay, int scale FUNC_ATTR_UNUSED, int force)
+{
+  if (!force) {
+    return;
+  }
+
+  UI *ui = ctx;
+  TUIData *data = ui->data;
+
+  if (data->overflow) {
+    return;
+  }
+
+  flush_buf(ui);
+  loop_uv_run(data->loop, (int)(delay / 10), false);
 }
 
 static void unibi_set_if_empty(unibi_term *ut, enum unibi_string str, const char *val)
@@ -2253,7 +2276,6 @@ static void flush_buf(UI *ui)
   data->overflow = false;
 }
 
-#if TERMKEY_VERSION_MAJOR > 0 || TERMKEY_VERSION_MINOR > 18
 /// Try to get "kbs" code from stty because "the terminfo kbs entry is extremely
 /// unreliable." (Vim, Bash, and tmux also do this.)
 ///
@@ -2262,14 +2284,14 @@ static void flush_buf(UI *ui)
 static const char *tui_get_stty_erase(void)
 {
   static char stty_erase[2] = { 0 };
-# if defined(HAVE_TERMIOS_H)
+#if defined(HAVE_TERMIOS_H)
   struct termios t;
   if (tcgetattr(input_global_fd(), &t) != -1) {
     stty_erase[0] = (char)t.c_cc[VERASE];
     stty_erase[1] = '\0';
     DLOG("stty/termios:erase=%s", stty_erase);
   }
-# endif
+#endif
   return stty_erase;
 }
 
@@ -2303,4 +2325,3 @@ static const char *tui_tk_ti_getstr(const char *name, const char *value, void *d
 
   return value;
 }
-#endif
