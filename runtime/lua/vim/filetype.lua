@@ -448,6 +448,8 @@ local extension = {
   gsp = 'gsp',
   gjs = 'javascript.glimmer',
   gts = 'typescript.glimmer',
+  gyp = 'gyp',
+  gypi = 'gyp',
   hack = 'hack',
   hackpartial = 'hack',
   haml = 'haml',
@@ -473,6 +475,8 @@ local extension = {
   hex = 'hex',
   ['h32'] = 'hex',
   hjson = 'hjson',
+  m3u = 'hlsplaylist',
+  m3u8 = 'hlsplaylist',
   hog = 'hog',
   hws = 'hollywood',
   hoon = 'hoon',
@@ -703,6 +707,9 @@ local extension = {
   nanorc = 'nanorc',
   ncf = 'ncf',
   nginx = 'nginx',
+  nim = 'nim',
+  nims = 'nim',
+  nimble = 'nim',
   ninja = 'ninja',
   nix = 'nix',
   nqc = 'nqc',
@@ -1014,6 +1021,8 @@ local extension = {
   ts = function(path, bufnr)
     return M.getlines(bufnr, 1):find('<%?xml') and 'xml' or 'typescript'
   end,
+  mts = 'typescript',
+  cts = 'typescript',
   tsx = 'typescriptreact',
   uc = 'uc',
   uit = 'uil',
@@ -1446,6 +1455,7 @@ local filename = {
   ['.sawfishrc'] = 'lisp',
   ['/etc/login.access'] = 'loginaccess',
   ['/etc/login.defs'] = 'logindefs',
+  ['.luacheckrc'] = 'lua',
   ['lynx.cfg'] = 'lynx',
   ['m3overrides'] = 'm3build',
   ['m3makefile'] = 'm3build',
@@ -1491,6 +1501,8 @@ local filename = {
   ['/etc/shadow-'] = 'passwd',
   ['/etc/shadow'] = 'passwd',
   ['/etc/passwd.edit'] = 'passwd',
+  ['latexmkrc'] = 'perl',
+  ['.latexmkrc'] = 'perl',
   ['pf.conf'] = 'pf',
   ['main.cf'] = 'pfmain',
   pinerc = 'pine',
@@ -1722,7 +1734,7 @@ local pattern = {
     { priority = -1 },
   },
   ['[cC]hange[lL]og.*'] = starsetf(function(path, bufnr)
-    require('vim.filetype.detect').changelog(bufnr)
+    return require('vim.filetype.detect').changelog(bufnr)
   end),
   ['.*%.%.ch'] = 'chill',
   ['.*%.cmake%.in'] = 'cmake',
