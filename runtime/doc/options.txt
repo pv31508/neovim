@@ -2128,9 +2128,9 @@ A jump table for the options with a short description can be found at |Q_op|.
 	security reasons.
 
 					*'display'* *'dy'*
-'display' 'dy'		string	(default "lastline,msgsep")
+'display' 'dy'		string	(default "lastline")
 			global
-	Change the way text is displayed.  This is comma-separated list of
+	Change the way text is displayed.  This is a comma-separated list of
 	flags:
 	lastline	When included, as much as possible of the last line
 			in a window will be displayed.  "@@@" is put in the
@@ -2140,13 +2140,13 @@ A jump table for the options with a short description can be found at |Q_op|.
 			column of the last screen line.  Overrules "lastline".
 	uhex		Show unprintable characters hexadecimal as <xx>
 			instead of using ^C and ~C.
-	msgsep		When showing messages longer than 'cmdheight', only
-			scroll the message lines, not the entire screen. The
-			separator line is decorated by |hl-MsgSeparator| and
-			the "msgsep" flag of 'fillchars'.
+	msgsep		Obsolete flag. Allowed but takes no effect. |msgsep|
 
 	When neither "lastline" nor "truncate" is included, a last line that
 	doesn't fit is replaced with "@" lines.
+
+	The "@" character can be changed by setting the "lastline" item in
+	'fillchars'.  The character is highlighted with |hl-NonText|.
 
 						*'eadirection'* *'ead'*
 'eadirection' 'ead'	string	(default "both")
@@ -2483,6 +2483,7 @@ A jump table for the options with a short description can be found at |Q_op|.
 	  diff		'-'		deleted lines of the 'diff' option
 	  msgsep	' '		message separator 'display'
 	  eob		'~'		empty lines at the end of a buffer
+	  lastline	'@'		'display' contains lastline/truncate
 
 	Any one that is omitted will fall back to the default.  For "stl" and
 	"stlnc" the space will be used when there is highlighting, '^' or '='
@@ -2520,6 +2521,7 @@ A jump table for the options with a short description can be found at |Q_op|.
 	  fold		Folded			|hl-Folded|
 	  diff		DiffDelete		|hl-DiffDelete|
 	  eob		EndOfBuffer		|hl-EndOfBuffer|
+	  lastline	NonText			|hl-NonText|
 
 		*'fixendofline'* *'fixeol'* *'nofixendofline'* *'nofixeol'*
 'fixendofline' 'fixeol'	boolean	(default on)
@@ -3918,9 +3920,9 @@ A jump table for the options with a short description can be found at |Q_op|.
 	`:lgrepadd`, `:cfile`, `:cgetfile`, `:caddfile`, `:lfile`, `:lgetfile`,
 	and `:laddfile`.
 
-	This would be mostly useful when you use MS-Windows.  If |+iconv| is
-	enabled and GNU libiconv is used, setting 'makeencoding' to "char" has
-	the same effect as setting to the system locale encoding.  Example: >
+	This would be mostly useful when you use MS-Windows.  If iconv is
+	enabled, setting 'makeencoding' to "char" has the same effect as
+	setting to the system locale encoding.  Example: >
 		:set makeencoding=char	" system locale is used
 <
 						*'makeprg'* *'mp'*
@@ -5357,7 +5359,7 @@ A jump table for the options with a short description can be found at |Q_op|.
 	To use PowerShell: >
 		let &shell = executable('pwsh') ? 'pwsh' : 'powershell'
 		let &shellcmdflag = '-NoLogo -NoProfile -ExecutionPolicy RemoteSigned -Command [Console]::InputEncoding=[Console]::OutputEncoding=[System.Text.Encoding]::UTF8;'
-		let &shellredir = '-RedirectStandardOutput %s -NoNewWindow -Wait'
+		let &shellredir = '2>&1 | Out-File -Encoding UTF8 %s; exit $LastExitCode'
 		let &shellpipe = '2>&1 | Out-File -Encoding UTF8 %s; exit $LastExitCode'
 		set shellquote= shellxquote=
 
@@ -5958,6 +5960,22 @@ A jump table for the options with a short description can be found at |Q_op|.
 			global
 	When on, splitting a window will put the new window below the current
 	one. |:split|
+
+			*'splitkeep'* *'spk'*
+'splitkeep' 'spk'	string	(default "cursor")
+			global
+	The value of this option determines the scroll behavior when opening,
+	closing or resizing horizontal splits.
+
+	Possible values are:
+	  cursor	Keep the same relative cursor position.
+	  screen	Keep the text on the same screen line.
+	  topline	Keep the topline the same.
+
+	For the "screen" and "topline" values, the cursor position will be
+	changed when necessary. In this case, the jumplist will be populated
+	with the previous cursor position. For "screen", the text cannot always
+	be kept on the same screen line	when 'wrap' is enabled.
 
 			*'splitright'* *'spr'* *'nosplitright'* *'nospr'*
 'splitright' 'spr'	boolean	(default off)

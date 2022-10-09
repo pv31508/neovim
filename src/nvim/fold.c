@@ -3002,9 +3002,9 @@ static void foldlevelMarker(fline_T *flp)
 
   // cache a few values for speed
   char *startmarker = flp->wp->w_p_fmr;
-  int cstart = (unsigned char)(*startmarker);
+  char cstart = *startmarker;
   startmarker++;
-  int cend = (unsigned char)(*foldendmarker);
+  char cend = *foldendmarker;
 
   // Default: no start found, next level is same as current level
   flp->start = 0;
@@ -3032,8 +3032,8 @@ static void foldlevelMarker(fline_T *flp)
         flp->lvl_next++;
         flp->start++;
       }
-    } else if (*s == cend && STRNCMP(s + 1, foldendmarker + 1,
-                                     foldendmarkerlen - 1) == 0) {
+    } else if (*s == cend
+               && STRNCMP(s + 1, foldendmarker + 1, foldendmarkerlen - 1) == 0) {
       // found endmarker: set flp->lvl_next
       s += foldendmarkerlen;
       if (ascii_isdigit(*s)) {
