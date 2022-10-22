@@ -12,21 +12,8 @@
 -- Guideline: "If in doubt, put it in the runtime".
 --
 -- Most functions should live directly in `vim.`, not in submodules.
--- The only "forbidden" names are those claimed by legacy `if_lua`:
---    $ vim
---    :lua for k,v in pairs(vim) do print(k) end
---    buffer
---    open
---    window
---    lastline
---    firstline
---    type
---    line
---    eval
---    dict
---    beep
---    list
---    command
+--
+-- Compatibility with Vim's `if_lua` is explicitly a non-goal.
 --
 -- Reference (#6580):
 --    - https://github.com/luafun/luafun
@@ -35,8 +22,6 @@
 --    - https://github.com/torch/paths
 --    - https://github.com/bakpakin/Fennel (pretty print, repl)
 --    - https://github.com/howl-editor/howl/tree/master/lib/howl/util
-
-local vim = assert(vim)
 
 -- These are for loading runtime modules lazily since they aren't available in
 -- the nvim binary as specified in executor.c
@@ -122,9 +107,7 @@ function vim._os_proc_children(ppid)
   return children
 end
 
--- TODO(ZyX-I): Create compatibility layer.
-
---- Return a human-readable representation of the given object.
+--- Gets a human-readable representation of the given object.
 ---
 ---@see https://github.com/kikito/inspect.lua
 ---@see https://github.com/mpeterv/vinspect
@@ -433,11 +416,16 @@ function vim.region(bufnr, pos1, pos2, regtype, inclusive)
       c2 = c1 + regtype:sub(2)
       -- and adjust for non-ASCII characters
       bufline = vim.api.nvim_buf_get_lines(bufnr, l, l + 1, true)[1]
-      if c1 < #bufline then
+      local utflen = vim.str_utfindex(bufline, #bufline)
+      if c1 <= utflen then
         c1 = vim.str_byteindex(bufline, c1)
+      else
+        c1 = #bufline + 1
       end
-      if c2 < #bufline then
+      if c2 <= utflen then
         c2 = vim.str_byteindex(bufline, c2)
+      else
+        c2 = #bufline + 1
       end
     else
       c1 = (l == pos1[1]) and pos1[2] or 0

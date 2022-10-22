@@ -330,6 +330,10 @@ varnumber_T num_divide(varnumber_T n1, varnumber_T n2)
     } else {
       result = VARNUMBER_MAX;
     }
+  } else if (n1 == VARNUMBER_MIN && n2 == -1) {
+    // specific case: trying to do VARNUMBAR_MIN / -1 results in a positive
+    // number that doesn't fit in varnumber_T and causes an FPE
+    result = VARNUMBER_MAX;
   } else {
     result = n1 / n2;
   }
@@ -485,7 +489,7 @@ void eval_clear(void)
 
 /// Set an internal variable to a string value. Creates the variable if it does
 /// not already exist.
-void set_internal_string_var(const char *name, char *value)
+void set_internal_string_var(const char *name, char *value)  // NOLINT(readability-non-const-parameter)
   FUNC_ATTR_NONNULL_ARG(1)
 {
   typval_T tv = {
@@ -4221,11 +4225,11 @@ bool garbage_collect(bool testing)
 
   // history items (ShaDa additional elements)
   if (p_hi) {
-    for (uint8_t i = 0; i < HIST_COUNT; i++) {
+    for (HistoryType i = 0; i < HIST_COUNT; i++) {
       const void *iter = NULL;
       do {
         histentry_T hist;
-        iter = hist_iter(iter, i, false, &hist);
+        iter = hist_iter(iter, (uint8_t)i, false, &hist);
         if (hist.hisstr != NULL) {
           ABORTING(set_ref_list)(hist.additional_elements, copyID);
         }
@@ -6454,10 +6458,13 @@ pos_T *var2fpos(const typval_T *const tv, const bool dollar_lnum, int *const ret
   return NULL;
 }
 
-/// Convert list in "arg" into a position and optional file number.
-/// When "fnump" is NULL there is no file number, only 3 items.
+/// Convert list in "arg" into position "posp" and optional file number "fnump".
+/// When "fnump" is NULL there is no file number, only 3 items: [lnum, col, off]
 /// Note that the column is passed on as-is, the caller may want to decrement
 /// it to use 1 for the first column.
+///
+/// @param charcol  if true, use the column as the character index instead of the
+///                 byte index.
 ///
 /// @return  FAIL when conversion is not possible, doesn't check the position for
 ///          validity.
@@ -6498,13 +6505,16 @@ int list2fpos(typval_T *arg, pos_T *posp, int *fnump, colnr_T *curswantp, bool c
     return FAIL;
   }
   // If character position is specified, then convert to byte position
+  // If the line number is zero use the cursor line.
   if (charcol) {
     // Get the text for the specified line in a loaded buffer
     buf_T *buf = buflist_findnr(fnump == NULL ? curbuf->b_fnum : *fnump);
     if (buf == NULL || buf->b_ml.ml_mfp == NULL) {
       return FAIL;
     }
-    n = buf_charidx_to_byteidx(buf, posp->lnum, (int)n) + 1;
+    n = buf_charidx_to_byteidx(buf,
+                               posp->lnum == 0 ? curwin->w_cursor.lnum : posp->lnum,
+                               (int)n) + 1;
   }
   posp->col = (colnr_T)n;
 
@@ -8301,7 +8311,7 @@ repeat:
 /// "flags" can be "g" to do a global substitute.
 ///
 /// @return  an allocated string, NULL for error.
-char *do_string_sub(char *str, char *pat, char *sub, typval_T *expr, char *flags)
+char *do_string_sub(char *str, char *pat, char *sub, typval_T *expr, const char *flags)
 {
   int sublen;
   regmatch_T regmatch;
@@ -8620,7 +8630,7 @@ void invoke_prompt_callback(void)
     return;
   }
   char *text = ml_get(lnum);
-  char *prompt = (char *)prompt_text();
+  char *prompt = prompt_text();
   if (strlen(text) >= strlen(prompt)) {
     text += strlen(prompt);
   }

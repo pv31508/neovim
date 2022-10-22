@@ -1361,7 +1361,7 @@ void tv_list_reverse(list_T *const l)
 ///               true list will not be modified. Must be initialized to false
 ///               by the caller.
 void tv_list_item_sort(list_T *const l, ListSortItem *const ptrs,
-                       const ListSorter item_compare_func, bool *errp)
+                       const ListSorter item_compare_func, const bool *errp)
   FUNC_ATTR_NONNULL_ARG(3, 4)
 {
   const int len = tv_list_len(l);
@@ -3750,9 +3750,11 @@ varnumber_T tv_get_number_chk(const typval_T *const tv, bool *const ret_error)
 linenr_T tv_get_lnum(const typval_T *const tv)
   FUNC_ATTR_NONNULL_ALL FUNC_ATTR_WARN_UNUSED_RESULT
 {
+  const int did_emsg_before = did_emsg;
   linenr_T lnum = (linenr_T)tv_get_number_chk(tv, NULL);
-  if (lnum == 0) {  // No valid number, try using same function as line() does.
+  if (lnum <= 0 && did_emsg_before == did_emsg && tv->v_type != VAR_NUMBER) {
     int fnum;
+    // No valid number, try using same function as line() does.
     pos_T *const fp = var2fpos(tv, true, &fnum, false);
     if (fp != NULL) {
       lnum = fp->lnum;

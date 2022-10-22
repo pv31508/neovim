@@ -24,6 +24,7 @@ local rmdir = helpers.rmdir
 local write_file = helpers.write_file
 local expect_exit = helpers.expect_exit
 local poke_eventloop = helpers.poke_eventloop
+local assert_alive = helpers.assert_alive
 
 describe('lua stdlib', function()
   before_each(clear)
@@ -2210,6 +2211,10 @@ describe('lua stdlib', function()
     eq({3,7}, exec_lua[[return {re1:match_line(0, 1, 1, 8)}]])
     eq({}, exec_lua[[return {re1:match_line(0, 1, 1, 7)}]])
     eq({0,3}, exec_lua[[return {re1:match_line(0, 1, 0, 7)}]])
+
+    -- vim.regex() error inside :silent! should not crash. #20546
+    command([[silent! lua vim.regex('\\z')]])
+    assert_alive()
   end)
 
   it('vim.defer_fn', function()
@@ -2222,13 +2227,19 @@ describe('lua stdlib', function()
     eq(true, exec_lua[[return vim.g.test]])
   end)
 
-  it('vim.region', function()
-    insert(helpers.dedent( [[
-    text tααt tααt text
-    text tαxt txtα tex
-    text tαxt tαxt
-    ]]))
-    eq({5,15}, exec_lua[[ return vim.region(0,{1,5},{1,14},'v',true)[1] ]])
+  describe('vim.region', function()
+    it('charwise', function()
+      insert(helpers.dedent( [[
+      text tααt tααt text
+      text tαxt txtα tex
+      text tαxt tαxt
+      ]]))
+      eq({5,15}, exec_lua[[ return vim.region(0,{1,5},{1,14},'v',true)[1] ]])
+    end)
+    it('blockwise', function()
+      insert([[αα]])
+      eq({0,5}, exec_lua[[ return vim.region(0,{0,0},{0,4},'3',true)[0] ]])
+    end)
   end)
 
   describe('vim.on_key', function()

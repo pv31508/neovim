@@ -894,6 +894,31 @@ local function screen_tests(linegrid)
         :ls^         |
       ]])
     end)
+
+    it('VimResized autocommand does not cause invalid UI events #20692 #20759', function()
+      feed('<Esc>')
+      command([[autocmd VimResized * redrawtabline]])
+      command([[autocmd VimResized * lua vim.api.nvim_echo({ { 'Hello' } }, false, {})]])
+      command([[autocmd VimResized * let g:echospace = v:echospace]])
+      meths.set_option('showtabline', 2)
+      screen:expect([[
+        {2: + [No Name] }{3:            }|
+        resiz^e                   |
+        {0:~                        }|
+        {0:~                        }|
+                                 |
+      ]])
+      screen:try_resize(30, 6)
+      screen:expect([[
+        {2: + [No Name] }{3:                 }|
+        resiz^e                        |
+        {0:~                             }|
+        {0:~                             }|
+        {0:~                             }|
+                                      |
+      ]])
+      eq(29, meths.get_var('echospace'))
+    end)
   end)
 
   describe('press enter', function()
@@ -1026,4 +1051,37 @@ describe('Screen default colors', function()
       eq({rgb_bg=-1, rgb_fg=-1, rgb_sp=-1, cterm_bg=0, cterm_fg=0}, screen.default_colors)
     end}
   end)
+end)
+
+it('CTRL-F or CTRL-B scrolls a page after UI attach/resize #20605', function()
+  clear()
+  local screen = Screen.new(100, 100)
+  screen:attach()
+  eq(100, meths.get_option('lines'))
+  eq(99, meths.get_option('window'))
+  eq(99, meths.win_get_height(0))
+  feed('1000o<Esc>')
+  eq(903, funcs.line('w0'))
+  feed('<C-B>')
+  eq(806, funcs.line('w0'))
+  feed('<C-B>')
+  eq(709, funcs.line('w0'))
+  feed('<C-F>')
+  eq(806, funcs.line('w0'))
+  feed('<C-F>')
+  eq(903, funcs.line('w0'))
+  feed('G')
+  screen:try_resize(50, 50)
+  eq(50, meths.get_option('lines'))
+  eq(49, meths.get_option('window'))
+  eq(49, meths.win_get_height(0))
+  eq(953, funcs.line('w0'))
+  feed('<C-B>')
+  eq(906, funcs.line('w0'))
+  feed('<C-B>')
+  eq(859, funcs.line('w0'))
+  feed('<C-F>')
+  eq(906, funcs.line('w0'))
+  feed('<C-F>')
+  eq(953, funcs.line('w0'))
 end)
